@@ -23,6 +23,11 @@ func routes() http.Handler {
 
 	mux.Get("/user/logout", handlers.Repo.Logout)
 
+	mux.Route("/pusher", func(mux chi.Router) {
+		mux.Use(Auth)
+		mux.Post("/auth", handlers.Repo.PusherAuth)
+	})
+
 	// admin routes
 	mux.Route("/admin", func(mux chi.Router) {
 		// all admin routes are protected
