@@ -8,7 +8,6 @@ import (
 )
 
 func routes() http.Handler {
-
 	mux := chi.NewRouter()
 
 	// default middleware
