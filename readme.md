@@ -50,7 +50,7 @@ Run with flags:
 
 ~~~
 ./gopher-runner \
--dbuser='tcs' \
+-dbuser='user' \
 -pusherHost='localhost' \
 -pusherPort='4001' \
 -pusherKey='123abc' \
