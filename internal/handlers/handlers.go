@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -124,6 +125,7 @@ func (repo *DBRepo) AllHosts(w http.ResponseWriter, r *http.Request) {
 	hosts, err := repo.DB.AllHosts()
 	if err != nil {
 		log.Println(err)
+		return
 	}
 
 	// send data to template
@@ -202,6 +204,7 @@ func (repo *DBRepo) PostHost(w http.ResponseWriter, r *http.Request) {
 		}
 		h.ID = newID
 	}
+
 	repo.App.Session.Put(r.Context(), "flash", "Changes saved")
 	http.Redirect(w, r, fmt.Sprintf("/admin/host/%d", h.ID), http.StatusSeeOther)
 }
@@ -347,4 +350,30 @@ func show500(w http.ResponseWriter, r *http.Request) {
 
 func printTemplateError(w http.ResponseWriter, err error) {
 	_, _ = fmt.Fprint(w, fmt.Sprintf(`<small><span class='text-danger'>Error executing template: %s</span></small>`, err))
+}
+
+type serviceJSON struct {
+	OK bool `json:"ok"`
+}
+
+// ToggleServiceForHost turns a host service on or off (active or inactive)
+func (repo *DBRepo) ToggleServiceForHost(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		log.Println(err)
+	}
+
+	hostID, _ := strconv.Atoi(r.Form.Get("host_id"))
+	serviceID, _ := strconv.Atoi(r.Form.Get("service_id"))
+	active, _ := strconv.Atoi(r.Form.Get("active"))
+
+	log.Println("Data:", hostID, serviceID, active)
+
+	var resp serviceJSON
+	resp.OK = true
+
+	out, _ := json.MarshalIndent(resp, "", "    ")
+	w.Header().Set("Content-Type", "application/json")
+	w.Write(out)
+
 }
