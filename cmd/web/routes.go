@@ -8,6 +8,7 @@ import (
 )
 
 func routes() http.Handler {
+
 	mux := chi.NewRouter()
 
 	// default middleware
@@ -24,6 +25,7 @@ func routes() http.Handler {
 
 	mux.Get("/pusher-test", handlers.Repo.TestPusher)
 
+	// our pusher routes
 	mux.Route("/pusher", func(mux chi.Router) {
 		mux.Use(Auth)
 		mux.Post("/auth", handlers.Repo.PusherAuth)
@@ -63,6 +65,7 @@ func routes() http.Handler {
 		mux.Get("/host/all", handlers.Repo.AllHosts)
 		mux.Get("/host/{id}", handlers.Repo.Host)
 		mux.Post("/host/{id}", handlers.Repo.PostHost)
+		mux.Post("/host/ajax/toggle-service", handlers.Repo.ToggleServiceForHost)
 	})
 
 	// static files
