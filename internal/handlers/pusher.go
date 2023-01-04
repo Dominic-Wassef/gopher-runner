@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"io/ioutil"
+	"io"
 	"log"
 	"net/http"
 	"strconv"
@@ -12,7 +12,7 @@ import (
 func (repo *DBRepo) PusherAuth(w http.ResponseWriter, r *http.Request) {
 	userID := repo.App.Session.GetInt(r.Context(), "userID")
 	u, _ := repo.DB.GetUserById(userID)
-	params, _ := ioutil.ReadAll(r.Body)
+	params, _ := io.ReadAll(r.Body)
 	presneceData := pusher.MemberData{
 		UserID: strconv.Itoa(userID),
 		UserInfo: map[string]string{
