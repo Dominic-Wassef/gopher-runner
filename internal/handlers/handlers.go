@@ -15,7 +15,7 @@ import (
 	"github.com/dominic-wassef/gopher-runner/internal/models"
 	"github.com/dominic-wassef/gopher-runner/internal/repository"
 	"github.com/dominic-wassef/gopher-runner/internal/repository/dbrepo"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 )
 
 //Repo is the repository
@@ -49,6 +49,7 @@ func (repo *DBRepo) AdminDashboard(w http.ResponseWriter, r *http.Request) {
 		log.Println(err)
 		return
 	}
+
 	vars := make(jet.VarMap)
 	vars.Set("no_healthy", healthy)
 	vars.Set("no_problem", problem)
@@ -249,13 +250,11 @@ func (repo *DBRepo) OneUser(w http.ResponseWriter, r *http.Request) {
 	vars := make(jet.VarMap)
 
 	if id > 0 {
-
 		u, err := repo.DB.GetUserById(id)
 		if err != nil {
 			ClientError(w, r, http.StatusBadRequest)
 			return
 		}
-
 		vars.Set("user", u)
 	} else {
 		var u models.User
@@ -382,8 +381,6 @@ func (repo *DBRepo) ToggleServiceForHost(w http.ResponseWriter, r *http.Request)
 	serviceID, _ := strconv.Atoi(r.Form.Get("service_id"))
 	active, _ := strconv.Atoi(r.Form.Get("active"))
 
-	log.Println("Data:", hostID, serviceID, active)
-
 	err = repo.DB.UpdateHostServiceStatus(hostID, serviceID, active)
 	if err != nil {
 		log.Println(err)
@@ -393,5 +390,4 @@ func (repo *DBRepo) ToggleServiceForHost(w http.ResponseWriter, r *http.Request)
 	out, _ := json.MarshalIndent(resp, "", "    ")
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
-
 }

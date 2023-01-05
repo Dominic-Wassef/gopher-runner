@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/dominic-wassef/gopher-runner/internal/handlers"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 )
 
 func routes() http.Handler {
