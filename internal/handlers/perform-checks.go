@@ -10,16 +10,19 @@ import (
 	"time"
 
 	"github.com/dominic-wassef/gopher-runner/internal/models"
-	"github.com/go-chi/chi"
+	"github.com/go-chi/chi/v5"
 )
 
 const (
-	HTTP           = 1
-	HTTPS          = 2
+	// HTTP is the unencrypted web service check
+	HTTP = 1
+	// HTTPS is the encrypted web service check
+	HTTPS = 2
+	// SSLCertificate is ssl certificate check
 	SSLCertificate = 3
 )
 
-// jsonResp describes the JSON response sent back to the client
+// jsonResp describes the JSON response sent back to client
 type jsonResp struct {
 	OK            bool      `json:"ok"`
 	Message       string    `json:"message"`
@@ -31,7 +34,12 @@ type jsonResp struct {
 	LastCheck     time.Time `json:"last_check"`
 }
 
-// TestCheck manually tests a host service and sends JSON response sent back to client
+// ScheduledCheck performs a scheduled check on a host service by id
+func (repo *DBRepo) ScheduledCheck(hostServiceID int) {
+
+}
+
+// TestCheck manually tests a host service and sends JSON response
 func (repo *DBRepo) TestCheck(w http.ResponseWriter, r *http.Request) {
 	hostServiceID, _ := strconv.Atoi(chi.URLParam(r, "id"))
 	oldStatus := chi.URLParam(r, "oldStatus")
@@ -44,7 +52,7 @@ func (repo *DBRepo) TestCheck(w http.ResponseWriter, r *http.Request) {
 		okay = false
 	}
 
-	// get host/>
+	// get host
 	h, err := repo.DB.GetHostByID(hs.HostID)
 	if err != nil {
 		log.Println(err)
@@ -54,7 +62,7 @@ func (repo *DBRepo) TestCheck(w http.ResponseWriter, r *http.Request) {
 	// test the service
 	newStatus, msg := repo.testServiceForHost(h, hs)
 
-	// update the host service in DB with status (if changed) and last checked
+	// update the host service in the database with status (if changed) and last check
 	hs.Status = newStatus
 	hs.LastCheck = time.Now()
 	hs.UpdatedAt = time.Now()
@@ -83,15 +91,16 @@ func (repo *DBRepo) TestCheck(w http.ResponseWriter, r *http.Request) {
 		}
 	} else {
 		resp.OK = false
-		resp.Message = "Something went wrong!"
+		resp.Message = "Something went wrong"
 	}
 
 	// send json to client
-	out, _ := json.MarshalIndent(resp, "", "   ")
+	out, _ := json.MarshalIndent(resp, "", "    ")
 	w.Header().Set("Content-Type", "application/json")
 	w.Write(out)
 }
 
+// testServiceForHost tests a service for a host
 func (repo *DBRepo) testServiceForHost(h models.Host, hs models.HostService) (string, string) {
 	var msg, newStatus string
 
@@ -100,21 +109,27 @@ func (repo *DBRepo) testServiceForHost(h models.Host, hs models.HostService) (st
 		msg, newStatus = testHTTPForHost(h.URL)
 		break
 	}
+
 	return newStatus, msg
 }
 
+// testHTTPForHost tests HTTP service
 func testHTTPForHost(url string) (string, string) {
 	if strings.HasSuffix(url, "/") {
 		url = strings.TrimSuffix(url, "/")
 	}
+
 	url = strings.Replace(url, "https://", "http://", -1)
+
 	resp, err := http.Get(url)
 	if err != nil {
-		return fmt.Sprintf("%s - %s", url, "Error connecting"), "problem"
+		return fmt.Sprintf("%s - %s", url, "error connecting"), "problem"
 	}
 	defer resp.Body.Close()
+
 	if resp.StatusCode != http.StatusOK {
 		return fmt.Sprintf("%s - %s", url, resp.Status), "problem"
 	}
+
 	return fmt.Sprintf("%s - %s", url, resp.Status), "healthy"
 }
