@@ -36,7 +36,50 @@ type jsonResp struct {
 
 // ScheduledCheck performs a scheduled check on a host service by id
 func (repo *DBRepo) ScheduledCheck(hostServiceID int) {
+	log.Println("************* Running check for", hostServiceID)
+	hs, err := repo.DB.GetHostServiceByID(hostServiceID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
 
+	h, err := repo.DB.GetHostByID(hs.HostID)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	// tests the service
+	newStatus, msg := repo.testServiceForHost(h, hs)
+
+	// if the host service has changed, broadcast to all clients
+	if newStatus != hs.Status {
+		data := make(map[string]string)
+		data["message"] = fmt.Sprintf("host service %s on %s has changed to %s", hs.Service.ServiceName, h.HostName, newStatus)
+		repo.broadcastMessage("public-channel", "host-service-status-changed", data)
+
+		// if appropriate, send email of SMS message
+
+	}
+
+	// update the host service record in the db with status (if changed) ||
+	// update the last check record
+	hs.Status = newStatus
+	hs.LastCheck = time.Now()
+	err = repo.DB.UpdateHostService(hs)
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	log.Println("New status is", newStatus, "and msg is", msg)
+}
+
+func (repo *DBRepo) broadcastMessage(channel, messageType string, data map[string]string) {
+	err := app.WsClient.Trigger(channel, messageType, data)
+	if err != nil {
+		log.Println(err)
+	}
 }
 
 // TestCheck manually tests a host service and sends JSON response
