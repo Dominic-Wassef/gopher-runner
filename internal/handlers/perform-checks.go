@@ -57,16 +57,6 @@ func (repo *DBRepo) ScheduledCheck(hostServiceID int) {
 }
 
 func (repo *DBRepo) updateHostServiceStatusCount(h models.Host, hs models.HostService, newStatus, msg string) {
-	// if the host service has changed, broadcast to all clients
-	// if hostServiceStatusChanged {
-	// 	data := make(map[string]string)
-	// 	data["message"] = fmt.Sprintf("host service %s on %s has changed to %s", hs.Service.ServiceName, h.HostName, newStatus)
-	// 	repo.broadcastMessage("public-channel", "host-service-status-changed", data)
-
-	// 	// if appropriate, send email of SMS message
-
-	// }
-
 	// update the host service record in the db with status and last check record
 	hs.Status = newStatus
 	hs.LastCheck = time.Now()
@@ -170,8 +160,21 @@ func (repo *DBRepo) testServiceForHost(h models.Host, hs models.HostService) (st
 		break
 	}
 
-	// TODO - broadcast to clients (if appropriate)
-
+	// broadcast to clients (if appropriate)
+	if hs.Status != newStatus {
+		data := make(map[string]string)
+		data["host_id"] = strconv.Itoa(hs.HostID)
+		data["host_service_id"] = strconv.Itoa(hs.ID)
+		data["host_name"] = h.HostName
+		data["service_name"] = hs.Service.ServiceName
+		data["icon"] = hs.Service.Icon
+		data["status"] = newStatus
+		data["message"] = fmt.Sprintf("%s on %s reports %s", hs.Service.ServiceName, h.HostName, newStatus)
+		data["last_check"] = time.Now().Format("2006-01-02 3:04:06 PM")
+		// broadcast message to public channel
+		repo.broadcastMessage("public-channel", "host-service-status-changed", data)
+	}
+	// send email or sms (if appropriate)
 	return newStatus, msg
 }
 
