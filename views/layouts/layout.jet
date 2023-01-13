@@ -8,7 +8,7 @@
 
     <link rel="shortcut icon" href="/static/admin/img/icons/icon-48x48.png"/>
 
-    <title>Gopher-Runner</title>
+    <title>Gopher Runner</title>
 
     <!-- required css -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@sweetalert2/theme-bootstrap-4@3.1.4/bootstrap-4.min.css">
