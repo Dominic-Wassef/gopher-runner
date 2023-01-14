@@ -36,7 +36,7 @@
                 </tr>
                 </thead>
                 <tbody id="schedule-table-body">
-                  {{if len(items) > 0}}
+                    {{if len(items) > 0}}
                     {{range items}}
                     <tr class="schedule-row" id="schedule-{{.ID}}">
                         <td>{{.Host}}</td>
@@ -58,11 +58,13 @@
                         </td>
                     </tr>
                     {{end}}
-                  {{else}}
-                  <tr>
-                    <td colspan="5">No scheduled checks!</td>
-                  </tr>
-                  {{end}}
+                    {{else}}
+                    <tr>
+                        <td colspan="5">
+                            No scheduled checks
+                        </td>
+                    </tr>
+                    {{end}}
                 </tbody>
             </table>
         </div>
