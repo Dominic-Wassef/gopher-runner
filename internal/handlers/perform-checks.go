@@ -3,12 +3,15 @@ package handlers
 import (
 	"encoding/json"
 	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/dominic-wassef/gopher-runner/internal/channeldata"
+	"github.com/dominic-wassef/gopher-runner/internal/helpers"
 	"github.com/dominic-wassef/gopher-runner/internal/models"
 	"github.com/go-chi/chi/v5"
 )
@@ -199,12 +202,32 @@ func (repo *DBRepo) testServiceForHost(h models.Host, hs models.HostService) (st
 		if err != nil {
 			log.Println(err)
 		}
+		// send email/sms if appropriate
+		if repo.App.PreferenceMap["notify_via_email"] == "1" {
+			if hs.Status != "pending" {
+				mm := channeldata.MailData{
+					ToName:    repo.App.PreferenceMap["notify_name"],
+					ToAddress: repo.App.PreferenceMap["notify_email"],
+				}
+				// populate content for mail
+				if newStatus == "healthy" {
+					mm.Subject = fmt.Sprintf("Healthy: service %s on %s", hs.Service.ServiceName, hs.HostName)
+					mm.Content = template.HTML(fmt.Sprintf(`<p>Service %s on %s reported healthy status</p>
+					<p><strong>Message received: %s</p>`, hs.Service.ServiceName, hs.HostName, msg))
+				} else if newStatus == "problem" {
+					mm.Subject = fmt.Sprintf("Problem: service %s on %s", hs.Service.ServiceName, hs.HostName)
+					mm.Content = template.HTML(fmt.Sprintf(`<p>Service %s on %s reported problem</p>
+					<p><strong>Message received: %s</p>`, hs.Service.ServiceName, hs.HostName, msg))
+				} else if newStatus == "warning" {
+					mm.Subject = fmt.Sprintf("Warning: service %s on %s", hs.Service.ServiceName, hs.HostName)
+					mm.Content = template.HTML(fmt.Sprintf(`<p>Service %s on %s reported a warning</p>
+					<p><strong>Message received: %s</p>`, hs.Service.ServiceName, hs.HostName, msg))
+				}
+				helpers.SendEmail(mm)
+			}
+		}
 	}
-
 	repo.pushScheduleChangedEvent(hs, newStatus)
-
-	// TODO - send email/sms if appropriate
-
 	return newStatus, msg
 }
 
