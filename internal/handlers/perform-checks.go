@@ -13,6 +13,7 @@ import (
 	"github.com/dominic-wassef/gopher-runner/internal/channeldata"
 	"github.com/dominic-wassef/gopher-runner/internal/helpers"
 	"github.com/dominic-wassef/gopher-runner/internal/models"
+	"github.com/dominic-wassef/gopher-runner/internal/sms"
 	"github.com/go-chi/chi/v5"
 )
 
@@ -224,6 +225,23 @@ func (repo *DBRepo) testServiceForHost(h models.Host, hs models.HostService) (st
 					<p><strong>Message received: %s</p>`, hs.Service.ServiceName, hs.HostName, msg))
 				}
 				helpers.SendEmail(mm)
+			}
+		}
+		// send sms
+		if repo.App.PreferenceMap["notify_via_sms"] == "1" {
+			to := repo.App.PreferenceMap["sms_notify_number"]
+			msgMessage := ""
+
+			if newStatus == "healthy" {
+				msgMessage = fmt.Sprintf("Service %s on %s is healthy", hs.Service.ServiceName, hs.HostName)
+			} else if newStatus == "problem" {
+				msgMessage = fmt.Sprintf("Service %s on %s reports a problem: %s", hs.Service.ServiceName, hs.HostName, msg)
+			} else if newStatus == "warning" {
+				msgMessage = fmt.Sprintf("Service %s on %s reports a warning: %s", hs.Service.ServiceName, hs.HostName, msg)
+			}
+			err := sms.SendTextTwilio(to, msgMessage, repo.App)
+			if err != nil {
+				log.Println("Error sending sms in perform-checks.go", err)
 			}
 		}
 	}
