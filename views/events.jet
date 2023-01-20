@@ -60,7 +60,7 @@
 {{end}}
 
 {{block js()}}
-<script src="https://cdn.jsdelivr.net/npm/simple-datatables@5.0.0" type="text/javascript"></script>
+<script src="https://cdn.jsdelivr.net/npm/simple-datatables@6.0.0" type="text/javascript"></script>
 <script>
     document.addEventListener("DOMContentLoaded", function (event) {
         let t = document.getElementById("events-table");
