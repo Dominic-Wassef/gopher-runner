@@ -10,6 +10,7 @@ import (
 	"strings"
 	"time"
 
+	certificateutils "github.com/dominic-wassef/gopher-runner/internal/certificateUtils"
 	"github.com/dominic-wassef/gopher-runner/internal/channeldata"
 	"github.com/dominic-wassef/gopher-runner/internal/helpers"
 	"github.com/dominic-wassef/gopher-runner/internal/models"
@@ -182,6 +183,14 @@ func (repo *DBRepo) testServiceForHost(h models.Host, hs models.HostService) (st
 	case HTTP:
 		msg, newStatus = testHTTPForHost(h.URL)
 		break
+
+	case HTTPS:
+		msg, newStatus = testHTTPSForHost(h.URL)
+		break
+
+	case SSLCertificate:
+		msg, newStatus = testSSLForHost(h.URL)
+		break
 	}
 
 	// broadcast to clients if appropriate
@@ -307,6 +316,76 @@ func testHTTPForHost(url string) (string, string) {
 	}
 
 	return fmt.Sprintf("%s - %s", url, resp.Status), "healthy"
+}
+
+// testHTTPForHost tests HTTP service
+func testHTTPSForHost(url string) (string, string) {
+	if strings.HasSuffix(url, "/") {
+		url = strings.TrimSuffix(url, "/")
+	}
+
+	url = strings.Replace(url, "http://", "https://", -1)
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return fmt.Sprintf("%s - %s", url, "error connecting"), "problem"
+	}
+	defer resp.Body.Close()
+
+	if resp.StatusCode != http.StatusOK {
+		return fmt.Sprintf("%s - %s", url, resp.Status), "problem"
+	}
+
+	return fmt.Sprintf("%s - %s", url, resp.Status), "healthy"
+}
+
+func scanHost(hostname string, certDetailsChannel chan certificateutils.CertificateDetails, errorsChannel chan error) {
+
+	res, err := certificateutils.GetCertificateDetails(hostname, 10)
+	if err != nil {
+		errorsChannel <- err
+	} else {
+		certDetailsChannel <- res
+	}
+}
+
+func testSSLForHost(url string) (string, string) {
+	if strings.HasPrefix(url, "https://") {
+		url = strings.Replace(url, "https://", "", -1)
+	}
+
+	if strings.HasPrefix(url, "https://") {
+		url = strings.Replace(url, "http://", "", -1)
+	}
+
+	var certDetailsChannel chan certificateutils.CertificateDetails
+	var errorsChannel chan error
+	certDetailsChannel = make(chan certificateutils.CertificateDetails, 1)
+	errorsChannel = make(chan error, 1)
+
+	var msg, newStatus string
+
+	scanHost(url, certDetailsChannel, errorsChannel)
+
+	for i, certDetailsInQueue := 0, len(certDetailsChannel); i < certDetailsInQueue; i++ {
+		certDetails := <-certDetailsChannel
+		certificateutils.CheckExpirationStatus(&certDetails, 30)
+
+		if certDetails.ExpiringSoon {
+			if certDetails.DaysUntilExpiration < 7 {
+				msg = certDetails.Hostname + " expiring in " + strconv.Itoa(certDetails.DaysUntilExpiration) + " days"
+				newStatus = "problem"
+			} else {
+				msg = certDetails.Hostname + " expiring in " + strconv.Itoa(certDetails.DaysUntilExpiration) + " days"
+				newStatus = "warning"
+			}
+
+		} else {
+			msg = certDetails.Hostname + " expiring in " + strconv.Itoa(certDetails.DaysUntilExpiration) + " days"
+			newStatus = "healthy"
+		}
+	}
+	return msg, newStatus
 }
 
 func (repo *DBRepo) addToMonitorMap(hs models.HostService) {
