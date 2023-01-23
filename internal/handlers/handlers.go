@@ -395,7 +395,7 @@ func (repo *DBRepo) ToggleServiceForHost(w http.ResponseWriter, r *http.Request)
 	}
 
 	// broadcast
-	hs, _ := repo.DB.GetHostServiceByHostIdServiceID(hostID, serviceID)
+	hs, _ := repo.DB.GetHostServiceByHostIDServiceID(hostID, serviceID)
 	h, _ := repo.DB.GetHostByID(hostID)
 
 	// add or remove host service from the schedule
