@@ -10,6 +10,7 @@ type MailData struct {
 	FromAddress  string
 	AdditionalTo []string
 	Subject      string
+	Link         template.HTML
 	Content      template.HTML
 	Template     string
 	CC           []string

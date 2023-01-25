@@ -101,6 +101,7 @@ func (d *Dispatcher) dispatch() {
 func (w Worker) processMailQueueJob(mailMessage channeldata.MailData) {
 	data := struct {
 		Content       template.HTML
+		Link          template.HTML
 		From          string
 		FromName      string
 		PreferenceMap map[string]string
@@ -110,6 +111,7 @@ func (w Worker) processMailQueueJob(mailMessage channeldata.MailData) {
 		RowSets       map[string]interface{}
 	}{
 		Content:       mailMessage.Content,
+		Link:          mailMessage.Link,
 		FromName:      mailMessage.FromName,
 		From:          mailMessage.FromAddress,
 		PreferenceMap: preferenceMap,

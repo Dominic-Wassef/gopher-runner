@@ -224,14 +224,17 @@ func (repo *DBRepo) testServiceForHost(h models.Host, hs models.HostService) (st
 					mm.Subject = fmt.Sprintf("Healthy: service %s on %s", hs.Service.ServiceName, hs.HostName)
 					mm.Content = template.HTML(fmt.Sprintf(`<p>Service %s on %s reported healthy status</p>
 					<p><strong>Message received: %s</p>`, hs.Service.ServiceName, hs.HostName, msg))
+					mm.Link = template.HTML(fmt.Sprintf(`<p>%s</p>`, h.URL))
 				} else if newStatus == "problem" {
 					mm.Subject = fmt.Sprintf("Problem: service %s on %s", hs.Service.ServiceName, hs.HostName)
 					mm.Content = template.HTML(fmt.Sprintf(`<p>Service %s on %s reported problem</p>
 					<p><strong>Message received: %s</p>`, hs.Service.ServiceName, hs.HostName, msg))
+					mm.Link = template.HTML(fmt.Sprintf(`<p>%s</p>`, h.URL))
 				} else if newStatus == "warning" {
 					mm.Subject = fmt.Sprintf("Warning: service %s on %s", hs.Service.ServiceName, hs.HostName)
 					mm.Content = template.HTML(fmt.Sprintf(`<p>Service %s on %s reported a warning</p>
 					<p><strong>Message received: %s</p>`, hs.Service.ServiceName, hs.HostName, msg))
+					mm.Link = template.HTML(fmt.Sprintf(`<p>%s</p>`, h.URL))
 				}
 				helpers.SendEmail(mm)
 			}
